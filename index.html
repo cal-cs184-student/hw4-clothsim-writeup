@@ -40,7 +40,31 @@
 
 
 			<h2>Overview</h2>
-			Give a high-level overview of what you implemented in this homework. Think about what you've built as a whole. Share your thoughts on what interesting things you've learned from completing the homework.
+			<p>
+				In this homework, I built a real-time cloth simulator using a mass-spring
+				system. I represented the cloth as a grid of point masses connected by
+				structural, shearing, and bending springs. I applied external and spring
+				forces and used Verlet integration to update the cloth's position over
+				time. I also constrained the springs to prevent unrealistic stretching.
+			</p>
+
+			<p>
+				I implemented collisions between the cloth and spheres and planes, along
+				with spatial hashing for efficient cloth self-collision detection. Finally,
+				I implemented several GPU shaders, including diffuse lighting,
+				Blinn-Phong lighting, texture mapping, bump mapping, displacement mapping,
+				and environment-mapped reflections.
+			</p>
+
+			<p>
+				This project showed me how physical simulation, collision detection, mesh
+				resolution, and GPU rendering work together. I found it especially
+				interesting that changing parameters such as spring stiffness, density,
+				damping, and mesh resolution can greatly change the cloth's behavior and
+				appearance. I also learned the difference between changing only surface
+				lighting with bump mapping and physically modifying geometry with
+				displacement mapping.
+			</p>
 
 			<h2>Part 1: Masses and springs</h2>
 			<h3>Implementation</h3>
@@ -608,428 +632,211 @@
 			<h3>Shader Programs</h3>
 
 			<p>
-				A shader is a program that runs on the GPU to perform graphics
-				calculations in parallel. Shaders allow us to render different
-				materials and lighting effects efficiently without performing
-				expensive ray tracing calculations.
+				A shader is a small program executed in parallel on the GPU. The vertex
+				shader processes each vertex, transforming its position and passing values
+				such as its world-space position, normal, tangent, and texture coordinates
+				to the next stage. These values are interpolated across each triangle and
+				received by the fragment shader. The fragment shader uses them to determine
+				the final color of each visible fragment. Together, these stages allow the
+				renderer to efficiently create lighting, texture, bump, displacement, and
+				reflection effects in real time.
 			</p>
-
-			<p>
-				The vertex shader processes individual vertices and transforms
-				their positions into clip space. It also passes attributes such
-				as world-space positions, normals, and texture coordinates to
-				the next stage. These attributes are interpolated during
-				rasterization.
-			</p>
-
-			<p>
-				The fragment shader uses the interpolated attributes to calculate
-				the final color of each fragment. Together, the two shaders allow
-				us to modify both the geometry and appearance of an object.
-			</p>
-
-
-			<h3>Diffuse Shading</h3>
-
-			<p>
-				I implemented diffuse shading by calculating the direction from
-				the fragment toward the light source and taking its dot product
-				with the surface normal. Surfaces facing the light receive more
-				illumination, while surfaces facing away receive no direct
-				diffuse illumination.
-			</p>
-
-			<p>
-				The light intensity also decreases with the squared distance
-				from the light source.
-			</p>
-
 
 			<h3>Blinn-Phong Shading</h3>
 
 			<p>
-				The Blinn-Phong shading model combines three lighting components:
-				ambient, diffuse, and specular illumination.
+				The Blinn-Phong model combines ambient, diffuse, and specular illumination.
+				Ambient illumination provides a small amount of light everywhere. Diffuse
+				illumination depends on the angle between the surface normal and direction
+				to the light. Specular illumination creates highlights using the angle
+				between the normal and the halfway vector between the light and camera
+				directions. Adding these components creates a more complete approximation
+				of a lit surface.
 			</p>
 
-			<p>
-				\[
-				L = L_a + L_d + L_s
-				\]
-			</p>
-
-			<ul>
-				<li>
-					<strong>Ambient:</strong> Provides constant background
-					illumination so that surfaces are not completely dark
-					when facing away from the light.
-				</li>
-
-				<li>
-					<strong>Diffuse:</strong> Depends on the angle between
-					the surface normal and the light direction. It creates
-					gradual variations in brightness across the surface.
-				</li>
-
-				<li>
-					<strong>Specular:</strong> Produces shiny highlights
-					based on the alignment between the surface normal and
-					the halfway vector between the viewing and lighting
-					directions.
-				</li>
-			</ul>
-
-			<p>
-				I calculated the halfway vector as:
-			</p>
-
-			<p>
-				\[
-				\mathbf{h} =
-				\frac{\mathbf{l}+\mathbf{v}}
-				{\|\mathbf{l}+\mathbf{v}\|}
-				\]
-			</p>
-
-			<p>
-				The complete lighting equation is:
-			</p>
-
-			<p>
-				\[
-				L =
-				k_a I_a +
-				k_d\frac{I}{r^2}\max(0,\mathbf{n}\cdot\mathbf{l}) +
-				k_s\frac{I}{r^2}\max(0,\mathbf{n}\cdot\mathbf{h})^p
-				\]
-			</p>
-
-			<p>
-				The exponent \(p\) controls the concentration of the specular
-				highlight. A larger exponent produces a smaller and sharper
-				highlight.
-			</p>
-
-			<div class="image-grid">
-
+			<div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:20px;">
 				<figure>
-					<img src="assets/part5_ambient.png"
-						 alt="Ambient lighting only" />
-					<figcaption>Ambient component only.</figcaption>
+					<img src="assets/part5_phong_ambient.png"
+						 alt="Ambient component"
+						 style="width:100%">
+					<figcaption>Ambient illumination only.</figcaption>
 				</figure>
 
 				<figure>
-					<img src="assets/part5_diffuse.png"
-						 alt="Diffuse lighting only" />
-					<figcaption>Diffuse component only.</figcaption>
+					<img src="assets/part5_phong_diffuse.png"
+						 alt="Diffuse component"
+						 style="width:100%">
+					<figcaption>Diffuse illumination only.</figcaption>
 				</figure>
 
 				<figure>
-					<img src="assets/part5_specular.png"
-						 alt="Specular lighting only" />
-					<figcaption>Specular component only.</figcaption>
+					<img src="assets/part5_phong_specular.png"
+						 alt="Specular component"
+						 style="width:100%">
+					<figcaption>Specular illumination only.</figcaption>
 				</figure>
 
 				<figure>
-					<img src="assets/part5_phong.png"
-						 alt="Complete Blinn-Phong shading" />
+					<img src="assets/part5_phong_full.png"
+						 alt="Complete Blinn-Phong model"
+						 style="width:100%">
 					<figcaption>
-						All three Blinn-Phong components combined.
+						Complete Blinn-Phong model with ambient, diffuse, and specular
+						illumination.
 					</figcaption>
 				</figure>
-
 			</div>
-
-			<p>
-				Ambient lighting provides uniform brightness, diffuse lighting
-				reveals the curvature and orientation of the surface, and
-				specular lighting creates concentrated highlights. Combining
-				the three components produces a more realistic material
-				appearance.
-			</p>
-
 
 			<h3>Texture Mapping</h3>
 
 			<p>
-				In the texture mapping shader, I used the interpolated UV
-				coordinates of each fragment to sample a two-dimensional
-				texture. I used the GLSL <code>texture()</code> function to
-				retrieve the corresponding color and assigned it to
-				<code>out_color</code>.
-			</p>
-
-			<p>
-				This allows an image to be mapped onto the cloth without
-				modifying its geometry. As the cloth moves and folds, the
-				texture follows the deformation of the surface.
+				The texture shader samples my custom image using the interpolated UV
+				coordinates of each fragment. The sampled RGB value is used directly as the
+				fragment's output color. This maps a two-dimensional image onto the
+				three-dimensional cloth surface.
 			</p>
 
 			<figure>
-				<img src="assets/part5_texture.png"
-					 alt="Cloth rendered with a custom texture"
-					 style="width:70%;" />
+				<img src="assets/part5_texture_custom.png"
+					 alt="Cloth rendered using a custom texture"
+					 style="width:70%">
 				<figcaption>
-					Texture mapping using a custom image.
+					Texture mapping on the cloth using my custom
+					<code>texture_1.png</code>.
 				</figcaption>
 			</figure>
-
 
 			<h3>Bump Mapping</h3>
 
 			<p>
-				Bump mapping creates the appearance of surface detail without
-				changing the actual geometry of an object. I sampled neighboring
-				height-map values to calculate how the height changes along
-				the U and V texture directions.
+				Bump mapping changes the surface normals without moving the mesh vertices.
+				I sampled neighboring locations in the height texture to estimate changes
+				in height along the U and V texture directions. I formed a local normal
+				<code>(-dU, -dV, 1)</code> and transformed it into world space using the
+				tangent-bitangent-normal matrix. The modified normal changes the lighting,
+				creating the illusion of surface detail while leaving the object's outline
+				unchanged.
 			</p>
 
-			<p>
-				Using the surface tangent and normal, I calculated the
-				bitangent and constructed the tangent-bitangent-normal
-				(TBN) matrix:
-			</p>
+			<figure>
+				<img src="assets/part5_bump_cloth.png"
+					 alt="Bump mapping on cloth"
+					 style="width:70%">
+				<figcaption>
+					Bump mapping on the cloth using normal scaling 2 and height scaling 1.
+				</figcaption>
+			</figure>
 
-			<p>
-				\[
-				\mathbf{b} = \mathbf{n}\times\mathbf{t}
-				\]
-			</p>
+			<h3>Bump Mapping at Different Sphere Resolutions</h3>
 
-			<p>
-				\[
-				TBN = [\mathbf{t}\;\mathbf{b}\;\mathbf{n}]
-				\]
-			</p>
-
-			<p>
-				I used the height differences to construct a perturbed
-				tangent-space normal and transformed it into world space:
-			</p>
-
-			<p>
-				\[
-				\mathbf{n}' =
-				\operatorname{normalize}
-				\left(TBN
-				\begin{bmatrix}
-				-dU\\
-				-dV\\
-				1
-				\end{bmatrix}\right)
-				\]
-			</p>
-
-			<p>
-				I then used the modified normal in the Blinn-Phong lighting
-				calculation. This changes how light interacts with the
-				surface while leaving the vertex positions unchanged.
-			</p>
-
-			<div class="image-grid">
-
+			<div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:20px;">
 				<figure>
-					<img src="assets/part5_bump_cloth.png"
-						 alt="Bump mapping on cloth" />
-					<figcaption>Bump mapping applied to the cloth.</figcaption>
+					<img src="assets/part5_bump_sphere_16.png"
+						 alt="Bump mapping on a 16 by 16 sphere"
+						 style="width:100%">
+					<figcaption>Bump mapping with a 16 × 16 sphere mesh.</figcaption>
 				</figure>
 
 				<figure>
-					<img src="assets/part5_bump_sphere.png"
-						 alt="Bump mapping on sphere" />
-					<figcaption>Bump mapping applied to the sphere.</figcaption>
+					<img src="assets/part5_bump_sphere_128.png"
+						 alt="Bump mapping on a 128 by 128 sphere"
+						 style="width:100%">
+					<figcaption>Bump mapping with a 128 × 128 sphere mesh.</figcaption>
 				</figure>
-
 			</div>
 
+			<p>
+				Bump mapping primarily changes the lighting rather than the geometry.
+				Therefore, both resolutions show the height texture through their shading,
+				although the 128 × 128 sphere has a smoother underlying silhouette. The
+				exterior outline remains mostly smooth because bump mapping does not
+				actually move any vertices.
+			</p>
 
 			<h3>Displacement Mapping</h3>
 
 			<p>
-				Unlike bump mapping, displacement mapping modifies the
-				geometry itself. In the vertex shader, I sampled the height
-				map and displaced each vertex along its original surface
-				normal:
+				Displacement mapping uses the same normal calculation as bump mapping, but
+				it also modifies each vertex position. In the vertex shader, I moved each
+				vertex along its original normal by the sampled height multiplied by the
+				height-scaling value. Unlike bump mapping, this physically changes the
+				surface geometry and its silhouette.
 			</p>
 
-			<p>
-				\[
-				\mathbf{p}' =
-				\mathbf{p}+\mathbf{n}\cdot h(u,v)\cdot k_h
-				\]
-			</p>
-
-			<p>
-				Here, \(h(u,v)\) represents the sampled height and \(k_h\)
-				controls the displacement magnitude. I also used the
-				perturbed normals in the fragment shader to calculate
-				lighting consistently with the surface detail.
-			</p>
-
-			<figure>
-				<img src="assets/part5_displacement_sphere.png"
-					 alt="Displacement mapping on sphere"
-					 style="width:70%;" />
-				<figcaption>
-					Displacement mapping on the sphere using the same
-					height map as bump mapping.
-				</figcaption>
-			</figure>
-
-			<h3>Comparison of Bump and Displacement Mapping</h3>
-
-			<p>
-				Bump mapping changes only the surface normals, creating an
-				illusion of depth through lighting. The overall shape and
-				silhouette of the object remain unchanged.
-			</p>
-
-			<p>
-				Displacement mapping changes the actual vertex positions.
-				Therefore, it can produce visible changes to the silhouette
-				and geometry of the sphere. However, its effectiveness
-				depends on the resolution of the mesh.
-			</p>
-
-
-			<h3>Effect of Sphere Mesh Resolution</h3>
-
-			<div class="image-grid">
-
+			<div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:20px;">
 				<figure>
-					<img src="assets/part5_bump_16.png"
-						 alt="Bump mapping with coarse sphere mesh" />
+					<img src="assets/part5_displacement_sphere_16.png"
+						 alt="Displacement mapping on a 16 by 16 sphere"
+						 style="width:100%">
 					<figcaption>
-						Bump mapping: <code>-o 16 -a 16</code>.
+						Displacement mapping with a 16 × 16 sphere mesh.
 					</figcaption>
 				</figure>
 
 				<figure>
-					<img src="assets/part5_displacement_16.png"
-						 alt="Displacement mapping with coarse sphere mesh" />
+					<img src="assets/part5_displacement_sphere_128.png"
+						 alt="Displacement mapping on a 128 by 128 sphere"
+						 style="width:100%">
 					<figcaption>
-						Displacement mapping: <code>-o 16 -a 16</code>.
+						Displacement mapping with a 128 × 128 sphere mesh.
 					</figcaption>
 				</figure>
-
-				<figure>
-					<img src="assets/part5_bump_128.png"
-						 alt="Bump mapping with fine sphere mesh" />
-					<figcaption>
-						Bump mapping: <code>-o 128 -a 128</code>.
-					</figcaption>
-				</figure>
-
-				<figure>
-					<img src="assets/part5_displacement_128.png"
-						 alt="Displacement mapping with fine sphere mesh" />
-					<figcaption>
-						Displacement mapping: <code>-o 128 -a 128</code>.
-					</figcaption>
-				</figure>
-
 			</div>
 
 			<p>
-				With a coarse mesh of 16 by 16, displacement mapping has
-				fewer vertices available to represent changes in height.
-				Fine details may be lost, and the displaced geometry may
-				appear more angular.
+				The 16 × 16 sphere does not contain enough vertices to reproduce fine
+				changes in the height map, so its displaced surface appears coarse and
+				angular. The 128 × 128 sphere provides many more vertices and therefore
+				reproduces the height pattern with finer and smoother geometric detail.
 			</p>
+
+			<h3>Bump Mapping versus Displacement Mapping</h3>
 
 			<p>
-				Increasing the mesh resolution to 128 by 128 provides more
-				vertices that can be displaced independently. This allows
-				the geometry to represent smaller height variations and
-				more detailed surface features.
+				I used the same nondefault height texture for both techniques. Bump mapping
+				is less expensive because it changes only the normals used for lighting.
+				It can create convincing small details, but the object's silhouette remains
+				smooth. Displacement mapping moves the actual vertices, so bumps can be seen
+				along the outline and from different viewing angles. Its quality depends
+				more strongly on mesh resolution because a coarse mesh does not contain
+				enough vertices to represent detailed height changes.
 			</p>
-
-			<p>
-				Bump mapping is less dependent on mesh resolution because
-				its lighting calculations occur in the fragment shader.
-				Increasing the mesh resolution can improve the underlying
-				sphere geometry, but the texture-based surface details
-				remain visible even on a relatively coarse mesh.
-			</p>
-
 
 			<h3>Environment-Mapped Reflections</h3>
 
 			<p>
-				I implemented mirror reflections using an environment
-				cubemap. Instead of tracing reflected rays through the
-				scene, I sampled the environment map to approximate the
-				incoming radiance.
+				The mirror shader first computes the direction from the surface toward the
+				camera. It reflects the opposite of this direction around the surface
+				normal, producing a direction into the surrounding environment. The shader
+				then samples the cubemap in that direction and uses the sampled environment
+				color as the fragment color. This makes the cloth and sphere appear
+				reflective.
 			</p>
 
-			<p>
-				I first calculated the normalized direction from the
-				fragment toward the camera:
-			</p>
-
-			<p>
-				\[
-				\mathbf{w}_o =
-				\frac{\mathbf{p}_{camera}-\mathbf{p}}
-				{\|\mathbf{p}_{camera}-\mathbf{p}\|}
-				\]
-			</p>
-
-			<p>
-				I then reflected the negative viewing direction across
-				the surface normal using the GLSL <code>reflect()</code>
-				function:
-			</p>
-
-			<p>
-				\[
-				\mathbf{w}_i =
-				2(\mathbf{n}\cdot\mathbf{w}_o)\mathbf{n}
-				-\mathbf{w}_o
-				\]
-			</p>
-
-			<p>
-				Finally, I sampled <code>u_texture_cubemap</code> using
-				the reflected direction and assigned the sampled color
-				to the fragment.
-			</p>
-
-			<div class="image-grid">
-
+			<div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:20px;">
 				<figure>
 					<img src="assets/part5_mirror_cloth.png"
-						 alt="Mirror shader on cloth" />
-					<figcaption>
-						Environment-mapped reflections on the cloth.
-					</figcaption>
+						 alt="Mirror shader on cloth"
+						 style="width:100%">
+					<figcaption>Environment-mapped reflections on the cloth.</figcaption>
 				</figure>
 
 				<figure>
 					<img src="assets/part5_mirror_sphere.png"
-						 alt="Mirror shader on sphere" />
-					<figcaption>
-						Environment-mapped reflections on the sphere.
-					</figcaption>
+						 alt="Mirror shader on sphere"
+						 style="width:100%">
+					<figcaption>Environment-mapped reflections on the sphere.</figcaption>
 				</figure>
 
+
+				<h2>Acknowledgment of AI</h2>
+
+				<p>
+					I used ChatGPT to help explain cloth-simulation and shader concepts,
+					troubleshoot implementation and build issues, suggest testing procedures,
+					and assist with organizing and drafting portions of this write-up. I
+					reviewed, tested, and verified the implementation and rendered results.
+				</p>
 			</div>
-
-			<p>
-				The reflected environment changes depending on the
-				viewing direction and surface orientation. The folds
-				of the cloth produce varying reflections, while the
-				curved sphere reflects different directions of the
-				surrounding environment across its surface.
-			</p>
-
-			<p>
-				This technique efficiently approximates mirror reflections,
-				but it does not account for reflections of other nearby
-				objects because it samples a precomputed environment map
-				rather than tracing rays through the scene.
-			</p>
-
-		</div>
-	</body>
+</body>
 </html>
